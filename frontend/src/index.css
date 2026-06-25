@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+:root {
+  --accent: #1a73e8;
+  --accent-soft: #e8f0fe;
+  --paper: #fafaf8;
+  --ink: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --highlight: #fff3bf;
+  --highlight-active: #fde68a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ink);
+  background: #fff;
+}
+
+.font-serif {
+  font-family: "Source Serif 4", Georgia, serif;
+}

@@ -1,0 +1,12 @@
+fastapi==0.138.1
+httpx==0.28.1
+openai==2.44.0
+pydantic==2.13.4
+pydantic-settings==2.14.2
+pydantic_core==2.46.4
+pymupdf==1.25.5
+python-multipart==0.0.32
+rich==15.0.0
+trafilatura==2.1.0
+typer==0.26.7
+uvicorn==0.49.0
