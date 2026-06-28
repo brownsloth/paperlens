@@ -67,6 +67,12 @@ export default function PublicApp() {
             </p>
           )}
 
+          <img
+            src={`${import.meta.env.BASE_URL}supermeme_14h6_2.png`}
+            alt="Let's make reading papers great again"
+            className="mx-auto mt-8 w-full max-w-md rounded-lg shadow-sm"
+          />
+
           <div
             className="mt-8 rounded-xl border-2 border-dashed border-[var(--border)] bg-white p-10 text-center shadow-sm"
             onDragOver={(e) => e.preventDefault()}

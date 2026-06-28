@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.cors import cors_origins_from_env
+from backend.app.public_limits import limits_summary
 from backend.app.public_routes import router as public_router
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,7 +36,12 @@ app.include_router(public_router, prefix="/api")
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "mode": "public", "cors_origins": ALLOWED_ORIGINS}
+    return {
+        "status": "ok",
+        "mode": "public",
+        "cors_origins": ALLOWED_ORIGINS,
+        "limits": limits_summary(),
+    }
 
 
 if DIST_DIR.exists():

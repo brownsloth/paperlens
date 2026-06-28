@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import time
 import uuid
 from pathlib import Path
@@ -18,6 +19,42 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 def _session_meta_path(paper_id: str) -> Path:
     return PUBLIC_SESSIONS_DIR / paper_id / "session.json"
+
+
+def load_session_meta(paper_id: str) -> dict:
+    path = _session_meta_path(paper_id)
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def save_session_meta(paper_id: str, meta: dict) -> None:
+    _session_meta_path(paper_id).write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+
+def get_llm_call_count(paper_id: str) -> int:
+    return int(load_session_meta(paper_id).get("llm_calls", 0))
+
+
+def get_annotation_chat_count(paper_id: str, annotation_id: str) -> int:
+    chats = load_session_meta(paper_id).get("annotation_chats", {})
+    return int(chats.get(annotation_id, 0))
+
+
+def record_llm_usage(paper_id: str, *, annotation_id: str | None = None) -> None:
+    meta = load_session_meta(paper_id)
+    meta["llm_calls"] = int(meta.get("llm_calls", 0)) + 1
+    if annotation_id:
+        chats = dict(meta.get("annotation_chats", {}))
+        chats[annotation_id] = int(chats.get(annotation_id, 0)) + 1
+        meta["annotation_chats"] = chats
+    save_session_meta(paper_id, meta)
+
+
+def delete_public_session(paper_id: str) -> None:
+    session_dir = PUBLIC_SESSIONS_DIR / paper_id
+    if session_dir.exists():
+        shutil.rmtree(session_dir, ignore_errors=True)
 
 
 def is_public_session(paper_id: str) -> bool:
@@ -45,7 +82,12 @@ def _title_from_filename(filename: str) -> str:
     return stem.strip() or "Uploaded paper"
 
 
-def create_session_from_upload(filename: str, pdf_bytes: bytes) -> PaperDocument:
+def create_session_from_upload(
+    filename: str,
+    pdf_bytes: bytes,
+    *,
+    max_pages: int | None = None,
+) -> PaperDocument:
     if not pdf_bytes or pdf_bytes[:5] != b"%PDF-":
         raise ValueError("Uploaded file is not a valid PDF")
 
@@ -56,20 +98,31 @@ def create_session_from_upload(filename: str, pdf_bytes: bytes) -> PaperDocument
     pdf_path.write_bytes(pdf_bytes)
 
     title = _title_from_filename(filename)
-    doc = parse_paper(
-        pdf_path,
-        paper_id=paper_id,
-        title=title,
-        force=True,
-    )
+    try:
+        doc = parse_paper(
+            pdf_path,
+            paper_id=paper_id,
+            title=title,
+            force=True,
+        )
+        if max_pages is not None and doc.paper.page_count > max_pages:
+            raise ValueError(
+                f"PDF has too many pages ({doc.paper.page_count}; max {max_pages} on the public demo)."
+            )
+    except Exception:
+        delete_public_session(paper_id)
+        raise
+
     meta = {
         "paper_id": paper_id,
         "title": title,
         "filename": filename,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "public": True,
+        "llm_calls": 0,
+        "annotation_chats": {},
     }
-    _session_meta_path(paper_id).write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    save_session_meta(paper_id, meta)
     return doc
 
 
