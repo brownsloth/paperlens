@@ -1,0 +1,39 @@
+# Public PaperLens — upload, annotate, highlight, export (Railway)
+# UI + API in one container (unlike quote-search / Hindi Jinnie split deploys).
+
+FROM node:20-slim AS frontend
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci
+COPY frontend/ ./
+ENV VITE_PUBLIC_MODE=true
+RUN npm run build:public
+
+FROM python:3.12-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-public.txt ./
+RUN pip install --no-cache-dir -r requirements-public.txt
+
+COPY pyproject.toml README.md ./
+COPY speechlens/ speechlens/
+COPY paperlens/ paperlens/
+COPY catalog/ catalog/
+COPY backend/ backend/
+# Install local packages without pulling docling from pyproject.toml extras.
+RUN pip install --no-cache-dir --no-deps .
+
+COPY --from=frontend /app/frontend/dist ./frontend/dist
+
+ENV PORT=8080
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:' + __import__('os').environ.get('PORT','8080') + '/api/health')"
+
+CMD ["sh", "-c", "uvicorn backend.app.public_main:app --host 0.0.0.0 --port ${PORT}"]

@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:public": "VITE_PUBLIC_MODE=true vite",
     "build": "tsc -b && vite build",
+    "build:public": "VITE_PUBLIC_MODE=true tsc -b && vite build",
+    "build:portfolio": "tsc -b && VITE_PUBLIC_MODE=true VITE_BASE_PATH=/paperlens/ vite build",
     "preview": "vite preview"
   },
   "dependencies": {

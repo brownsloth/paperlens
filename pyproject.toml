@@ -20,6 +20,8 @@ dependencies = [
     "python-multipart>=0.0.12",
     "typer>=0.14.0",
     "rich>=13.9.0",
+    "docling>=2.0",
+    "duckduckgo-search>=7.0.0",
 ]
 
 [project.optional-dependencies]
@@ -28,12 +30,16 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "ruff>=0.8.0",
 ]
+retrieval = [
+    "tavily-python>=0.5.0",
+]
 
 [project.scripts]
 speechlens = "speechlens.cli:app"
+paperlens = "paperlens.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["speechlens"]
+packages = ["speechlens", "paperlens", "catalog"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

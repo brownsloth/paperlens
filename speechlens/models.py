@@ -31,7 +31,19 @@ class AnnotationType(str, Enum):
     DOCTRINAL_CONTEXT = "doctrinal_context"
     AMBIGUOUS_PHRASE = "ambiguous_phrase"
     RHETORICAL = "rhetorical"
+    RHETORICAL_PHRASE = "rhetorical_phrase"
+    COMMON_METAPHOR = "common_metaphor"
     CLAIM_VERIFICATION = "claim_verification"
+    POLITICAL_FRAMING = "political_framing"
+    HISTORICAL_TERM = "historical_term"
+    PERIOD_LANGUAGE = "period_language"
+    BOXING_CONTEXT = "boxing_context"
+
+
+class ClaimComponent(BaseModel):
+    claim: str
+    evidence_status: str
+    confidence: float = Field(ge=0.0, le=1.0)
 
 
 class Source(BaseModel):
@@ -57,6 +69,20 @@ class CandidateSpan(BaseModel):
     priority: int = Field(ge=1, le=5, default=3)
 
 
+class ExpandedSpan(BaseModel):
+    """Highlight for UI vs evidence unit for search/writing."""
+
+    highlight_span: str
+    evidence_span: str
+    reason: str
+    annotation_type: AnnotationType
+    priority: int = Field(ge=1, le=5, default=3)
+    annotation_question: str = ""
+    needs_web: bool = True
+    search_queries: list[str] = Field(default_factory=list)
+    context_segment_ids: list[str] = Field(default_factory=list)
+
+
 class Annotation(BaseModel):
     annotation_id: str
     segment_id: str
@@ -70,6 +96,10 @@ class Annotation(BaseModel):
     sources: list[Source] = Field(default_factory=list)
     needs_human_review: bool = False
     alternative_interpretations: list[str] = Field(default_factory=list)
+    evidence_span: str | None = None
+    annotation_question: str | None = None
+    factual_claims: list[ClaimComponent] = Field(default_factory=list)
+    interpretive_claims: list[ClaimComponent] = Field(default_factory=list)
 
 
 class Transcript(BaseModel):

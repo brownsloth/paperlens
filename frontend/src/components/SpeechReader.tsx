@@ -104,11 +104,11 @@ export function SpeechReader({
           <h1 className="font-serif mt-3 text-3xl font-semibold leading-tight text-[var(--ink)]">
             {document.title}
           </h1>
-          {document.metadata?.mode && (
+          {document.metadata?.mode != null ? (
             <p className="mt-2 text-sm text-[var(--muted)]">
               Depth: {String(document.metadata.mode)} · {document.annotations.length} annotations
             </p>
-          )}
+          ) : null}
         </header>
 
         {document.segments.map((segment) => (

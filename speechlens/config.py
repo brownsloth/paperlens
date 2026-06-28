@@ -10,5 +10,12 @@ class Settings(BaseSettings):
     human_review_threshold: float = 0.65
     max_spans_per_segment: int = 8
 
+    # Retrieval (Perplexity-lite)
+    enable_web_search: bool = True
+    tavily_api_key: str = ""
+    max_search_results: int = 3
+    max_retrieved_pages: int = 5
+    max_source_excerpt_chars: int = 2000
+
 
 settings = Settings()

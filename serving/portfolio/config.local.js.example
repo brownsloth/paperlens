@@ -1,0 +1,3 @@
+// Local portfolio dev: point at public API on :8080
+// Copy to myblogs/projects/static/paperlens/config.js when testing Gatsby + local API.
+window.PAPERLENS_API = "http://127.0.0.1:8080";
