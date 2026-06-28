@@ -21,7 +21,17 @@ from catalog.store import (
 from paperlens.annotate import PaperAnnotator, load_annotated, load_parsed, parse_paper
 from paperlens.arxiv import fetch_real_world_learning_papers, fetch_starter_papers, load_manifest
 from paperlens import library as paper_library
-from paperlens.models import AnnotationLens, BBox, PaperDocument
+from paperlens.models import PaperDocument
+from backend.app.paper_schemas import (
+    AnnotatePaperRequest,
+    CreatePaperAnnotationRequest,
+    PaperAnnotationChatRequest,
+    PaperHighlightRequest,
+    PaperRegionSelectionRequest,
+    PaperTextSelectionRequest,
+    UpdatePaperAnnotationRequest,
+    bbox_from_request,
+)
 from paperlens.paths import PAPER_FIGURES_DIR, PAPER_PAGES_DIR
 from paperlens.storage import (
     annotate_region_selection,
@@ -58,63 +68,6 @@ class AnnotateSpeechRequest(BaseModel):
     mode: AnnotationDepth = AnnotationDepth.MEDIUM
     require_sources: bool = True
     enable_web_search: bool = True
-
-
-class AnnotatePaperRequest(BaseModel):
-    lens: AnnotationLens = AnnotationLens.BEGINNER
-    max_candidates: int = 12
-
-
-class CreatePaperAnnotationRequest(BaseModel):
-    block_id: str
-    annotation_text: str
-    annotation_type: str = "concept_explanation"
-    quote: str | None = None
-    lens: AnnotationLens = AnnotationLens.BEGINNER
-    color: str | None = None
-
-
-class UpdatePaperAnnotationRequest(BaseModel):
-    annotation_text: str | None = None
-    annotation_type: str | None = None
-    color: str | None = None
-
-
-class PaperAnnotationChatRequest(BaseModel):
-    message: str
-
-
-class PaperBBoxRequest(BaseModel):
-    x0: float
-    y0: float
-    x1: float
-    y1: float
-
-
-class PaperTextSelectionRequest(BaseModel):
-    page: int
-    quote: str
-    question: str = ""
-    block_id: str | None = None
-    bbox: PaperBBoxRequest | None = None
-    lens: AnnotationLens = AnnotationLens.BEGINNER
-    color: str | None = None
-
-
-class PaperHighlightRequest(BaseModel):
-    page: int
-    quote: str
-    block_id: str | None = None
-    bbox: PaperBBoxRequest | None = None
-    color: str | None = None
-
-
-class PaperRegionSelectionRequest(BaseModel):
-    page: int
-    bbox: PaperBBoxRequest
-    question: str = "Explain what this region shows."
-    lens: AnnotationLens = AnnotationLens.BEGINNER
-    color: str | None = None
 
 
 class CreateCategoryRequest(BaseModel):
@@ -420,12 +373,6 @@ def papers_annotation_chat(
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-def _bbox_from_request(req: PaperBBoxRequest | None) -> BBox | None:
-    if not req:
-        return None
-    return BBox(x0=req.x0, y0=req.y0, x1=req.x1, y1=req.y1)
-
-
 @app.post("/papers/{paper_id}/annotations/highlight", response_model=PaperDocument)
 def papers_highlight_selection(paper_id: str, request: PaperHighlightRequest) -> PaperDocument:
     try:
@@ -434,7 +381,7 @@ def papers_highlight_selection(paper_id: str, request: PaperHighlightRequest) ->
             page=request.page,
             quote=request.quote,
             block_id=request.block_id,
-            bbox=_bbox_from_request(request.bbox),
+            bbox=bbox_from_request(request.bbox),
             color=request.color,
         )
     except FileNotFoundError as exc:
@@ -456,7 +403,7 @@ def papers_annotate_selection(paper_id: str, request: PaperTextSelectionRequest)
             quote=request.quote,
             question=request.question,
             block_id=request.block_id,
-            bbox=_bbox_from_request(request.bbox),
+            bbox=bbox_from_request(request.bbox),
             lens=request.lens,
             color=request.color,
         )
@@ -468,7 +415,7 @@ def papers_annotate_selection(paper_id: str, request: PaperTextSelectionRequest)
 
 @app.post("/papers/{paper_id}/annotations/from-region", response_model=PaperDocument)
 def papers_annotate_region(paper_id: str, request: PaperRegionSelectionRequest) -> PaperDocument:
-    bbox = _bbox_from_request(request.bbox)
+    bbox = bbox_from_request(request.bbox)
     if not bbox:
         raise HTTPException(status_code=400, detail="Region bbox is required")
     try:

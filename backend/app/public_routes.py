@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, UploadFile
 from fastapi.responses import FileResponse, PlainTextResponse, Response
 
 from catalog.store import search_paper
-from backend.app.main import (
+from backend.app.paper_schemas import (
     AnnotatePaperRequest,
     CreatePaperAnnotationRequest,
     PaperAnnotationChatRequest,
@@ -14,7 +14,7 @@ from backend.app.main import (
     PaperRegionSelectionRequest,
     PaperTextSelectionRequest,
     UpdatePaperAnnotationRequest,
-    _bbox_from_request,
+    bbox_from_request,
 )
 from paperlens.annotate import PaperAnnotator, load_parsed
 from paperlens.export import export_annotated_pdf, export_json, export_markdown
@@ -155,7 +155,7 @@ def public_highlight(paper_id: str, request: PaperHighlightRequest) -> PaperDocu
             page=request.page,
             quote=request.quote,
             block_id=request.block_id,
-            bbox=_bbox_from_request(request.bbox),
+            bbox=bbox_from_request(request.bbox),
             color=request.color,
         )
     except FileNotFoundError as exc:
@@ -178,7 +178,7 @@ def public_annotate_selection(paper_id: str, request: PaperTextSelectionRequest)
             quote=request.quote,
             question=request.question,
             block_id=request.block_id,
-            bbox=_bbox_from_request(request.bbox),
+            bbox=bbox_from_request(request.bbox),
             lens=request.lens,
             color=request.color,
         )
@@ -191,7 +191,7 @@ def public_annotate_selection(paper_id: str, request: PaperTextSelectionRequest)
 @router.post("/papers/{paper_id}/annotations/from-region", response_model=PaperDocument)
 def public_annotate_region(paper_id: str, request: PaperRegionSelectionRequest) -> PaperDocument:
     _require_public_paper(paper_id)
-    bbox = _bbox_from_request(request.bbox)
+    bbox = bbox_from_request(request.bbox)
     if not bbox:
         raise HTTPException(status_code=400, detail="Region bbox is required")
     try:
